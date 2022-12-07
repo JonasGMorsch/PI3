@@ -90,7 +90,8 @@ static void wifi_init(void)
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     ESP_ERROR_CHECK(esp_wifi_set_mode(ESPNOW_WIFI_MODE));
     ESP_ERROR_CHECK(esp_wifi_start());
-    ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR));
+    //ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR));
+    //ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_LR)); //THIS BLOCKS WIFI DEVICES TO FIND IT
 }
 
 void espnow_init(void)
@@ -136,7 +137,7 @@ void app_main(void)
         ESP_ERROR_CHECK(gpio_set_level(GPIO_OUTPUT_LED, 1));
 
         esp_now_send(receiver_MAC, (uint8_t *)sending_data, sizeof(sending_data)); // send data
-        
+
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
 }

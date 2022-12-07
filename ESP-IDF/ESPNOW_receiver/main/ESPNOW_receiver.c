@@ -61,9 +61,9 @@ static void espnow_recv_cb(const uint8_t *mac_addr, const uint8_t *data, int len
   }*/
   ESP_LOGI(TAG, "\r\n");
 
-  ESP_ERROR_CHECK(gpio_set_level(GPIO_OUTPUT_LED, 0));
+  gpio_set_level(GPIO_OUTPUT_LED, 0);
   vTaskDelay(10 / portTICK_PERIOD_MS);
-  ESP_ERROR_CHECK(gpio_set_level(GPIO_OUTPUT_LED, 1));
+  gpio_set_level(GPIO_OUTPUT_LED, 1);
 }
 
 static void wifi_init(void)
@@ -75,7 +75,8 @@ static void wifi_init(void)
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
   ESP_ERROR_CHECK(esp_wifi_set_mode(ESPNOW_WIFI_MODE));
   ESP_ERROR_CHECK(esp_wifi_start());
-  ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR));
+  //ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR)); //THIS BLOCKS WIFI DEVICES TO FIND IT
+  //ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_LR)); //THIS BLOCKS WIFI DEVICES TO FIND IT
 }
 
 void espnow_init(void)

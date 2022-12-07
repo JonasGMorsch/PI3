@@ -19,7 +19,7 @@ esp_now_peer_info_t receiver;
 
 /////////////////////////////////////////////////////////////////////
 const int Cap_GPIO = 32;
-const int Cap_GPIO_Driver = 33;
+//const int Cap_GPIO_Driver = 33;
 
 bool hit = false;
 
@@ -31,7 +31,7 @@ uint32_t return_tip_coupled_millis;
 uint32_t return_tip_task;
 
 uint32_t send_signal_task;
-uint32_t return_tip_coupled_count;
+volatile uint32_t return_tip_coupled_count;
 
 
 volatile uint32_t guard_touched_millis;
@@ -85,17 +85,6 @@ void IRAM_ATTR ADCTimer()
         peak_hold_value = adc_value;
       break;
 
-
-    //    case 1 ... 2:
-    //      peak_hold_value = 0;
-    //      break;
-    //    case 3 ... 9:
-    //      peak_hold_value += adc_value;
-    //      break;
-    //
-    //    case 10:
-    //      peak_hold_value = peak_hold_value / 7;
-
     default :
       if (peak_hold_value > adc_mediam)
         guard_touched_millis = millis();
@@ -105,7 +94,6 @@ void IRAM_ATTR ADCTimer()
 
       break;
   }
-
 
   print = true;
 }
@@ -215,7 +203,7 @@ void setup()
   //analogSetWidth(1);
   //analogSetClockDiv(100);
 
-  //analogSetAttenuation(ADC_11db);
+  analogSetAttenuation(ADC_11db);
   //analogSetAttenuation(ADC_6db);
   //analogSetAttenuation(ADC_2_5db);
   //analogSetAttenuation(ADC_0db);
@@ -224,13 +212,19 @@ void setup()
 
 void loop()
 {
-
   if (print)
   {
+
+    Serial.print("peak hold value:");
+    Serial.print(peak_hold_value);
+    Serial.print("\t");
+    Serial.print("adc_mediam:");
+    Serial.println(adc_mediam);
+
     myData.adc_mediam = adc_mediam;
     myData.peak_hold_value = peak_hold_value;
     esp_now_send(receiver.peer_addr, (uint8_t *) &myData, sizeof(myData));
-    SenderLoop();
+    //SenderLoop();
     print = false;
   }
 
@@ -247,14 +241,4 @@ void loop()
     digitalWrite(LED_BUILTIN, HIGH);
   }
 
-
-  //  if (print)
-  //  {
-  //    Serial.print("adc_filtered_value:");
-  //    Serial.print(adc_filtered_value);
-  //    Serial.print("\t");
-  //    Serial.print("adc_mediam:");
-  //    Serial.println(adc_mediam);
-  //    print = false;
-  //  }
 }

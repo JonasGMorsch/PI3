@@ -1,0 +1,27 @@
+{
+	"folders": [
+		{
+			"path": "ESPNOW_receiver"
+		},
+		{
+			"path": "ESPNOW_sender"
+		},
+		{
+			"path": "esp_timer"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.inc": "c",
+			"string.h": "c",
+			"array": "c",
+			"string": "c",
+			"string_view": "c",
+			"espnow_example.h": "c",
+			"stdio.h": "c",
+			"espnow.h": "c",
+			"gpio.h": "c",
+			"ratio": "c"
+		}
+	}
+}
