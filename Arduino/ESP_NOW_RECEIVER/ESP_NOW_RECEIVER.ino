@@ -89,12 +89,8 @@ void setup()
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get recv packer info.
   esp_now_register_recv_cb(OnDataRecv);
-
-
 }
 
 void loop()
 {
-
-
 }
