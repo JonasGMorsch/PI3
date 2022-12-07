@@ -70,7 +70,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
 }
 
 
-hw_timer_t * cap_timer = NULL;
+//hw_timer_t * cap_timer = NULL;
 
 void setup()
 {

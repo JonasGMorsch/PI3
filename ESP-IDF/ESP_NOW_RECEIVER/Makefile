@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := hello_world_2
+PROJECT_NAME := hello_world
 
 include $(IDF_PATH)/make/project.mk

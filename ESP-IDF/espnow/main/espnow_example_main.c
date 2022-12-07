@@ -29,13 +29,29 @@
 #include "esp_crc.h"
 #include "espnow_example.h"
 
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+// The structure must match the receiver structure
+typedef struct struct_message
+{
+  uint32_t adc_filtered_value;
+  float adc_mediam;
+} struct_message;
+
+
+// Create a struct_message called myData
+struct_message myData;
+////////////////////////////////////////////////////////////////////////////////////
 #define ESPNOW_MAXDELAY 512
 
 static const char *TAG = "espnow_example";
 
 static xQueueHandle s_example_espnow_queue;
 
-static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0x78, 0xe3, 0x6d, 0x19, 0x4a, 0x64 };
+static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0x78, 0xe3, 0x6d, 0x19, 0x52, 0x08 };
+//static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0x78, 0xe3, 0x6d, 0x19, 0x40, 0x60 };
 
 static uint16_t s_example_espnow_seq[EXAMPLE_ESPNOW_DATA_MAX] = { 0, 0 };
 
@@ -102,6 +118,8 @@ static void example_espnow_recv_cb(const uint8_t *mac_addr, const uint8_t *data,
         free(recv_cb->data);
     }
 }
+
+
 
 /* Parse received ESPNOW data. */
 int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, int *magic)

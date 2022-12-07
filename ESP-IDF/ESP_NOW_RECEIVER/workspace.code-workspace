@@ -1,0 +1,10 @@
+{
+	"folders": [],
+	"settings": {
+		"files.associations": {
+			"stdio.h": "c",
+			"sdkconfig.h": "c",
+			"freertos.h": "c"
+		}
+	}
+}
