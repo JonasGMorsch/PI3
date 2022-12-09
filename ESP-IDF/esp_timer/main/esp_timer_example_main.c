@@ -20,9 +20,7 @@
 #include "freertos/timers.h"
 
 #include "driver/adc.h"
-
 #include "hal/adc_hal.h"
-
 #include "esp_adc_cal.h"
 
 #include "driver/gpio.h"
@@ -146,7 +144,7 @@ void app_main(void)
         }
 
         static uint32_t test_timer_micros;
-        if (esp_timer_get_time() - test_timer_micros > 100000)
+        if (esp_timer_get_time() - test_timer_micros > 1000000)
         {
             test_timer_micros = esp_timer_get_time();
             ESP_LOGI(TAG, "peak hold value: %d \t adc_mediam: %f", peak_hold_value, adc_mediam);

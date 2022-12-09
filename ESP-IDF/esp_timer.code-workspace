@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"path": "esp_timer"
+		},
+		{
+			"path": "ESPNOW_sender"
+		},
+		{
+			"path": "transmissor"
+		},
+		{
+			"path": "placar"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"adc.h": "c",
+			"gpio.h": "c",
+			"mutex": "c",
+			"array": "c",
+			"bitset": "c",
+			"string_view": "c",
+			"initializer_list": "c",
+			"regex": "c",
+			"utility": "c"
+		}
+	}
+}
