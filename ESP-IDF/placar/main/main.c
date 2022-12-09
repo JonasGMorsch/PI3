@@ -42,6 +42,7 @@ typedef struct struct_message
   float adc_mediam;
   bool hit;
   uint32_t player_side;
+  uint32_t adc_micros;
 } espnow_data_t;
 
 // Create a struct_message called myData
@@ -73,15 +74,10 @@ static void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len)
   }
 
   memcpy(&espnow_data, data, len);
-  ESP_LOGI(TAG, "peak hold value: %.4d   adc_mediam: %.2f", espnow_data.peak_hold_value, espnow_data.adc_mediam);
 
-  if (espnow_data.hit)
-  {
-    espnow_data.hit = false;
-    ESP_ERROR_CHECK(gpio_set_level(GPIO_OUTPUT_LED, 0));
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-    ESP_ERROR_CHECK(gpio_set_level(GPIO_OUTPUT_LED, 1));
-  }
+  // ESP_LOGI(TAG, "peak hold value: %.4d   adc_mediam: %.2f", espnow_data.peak_hold_value, espnow_data.adc_mediam);
+  ESP_LOGI(TAG, "peak hold value: %.4d adc_mediam: %.2f adc_micros: %.3d return_tip_coupled_count: %.4d",
+           espnow_data.peak_hold_value, espnow_data.adc_mediam, espnow_data.adc_micros, espnow_data.player_side);
 
   vTaskDelay(1);
 }
@@ -104,9 +100,22 @@ void app_main(void)
   gpio_set_level(GPIO_OUTPUT_LED, 1);
 
   // MAIN
-  // for (;;)
+  for (;;)
 
-  // {
-  //   vTaskDelay(1);
-  // }
+  {
+
+    static uint32_t hit_micros;
+    if (espnow_data.hit)
+    {
+      gpio_set_level(GPIO_OUTPUT_LED, 0);
+      hit_micros = esp_timer_get_time();
+      espnow_data.hit = false;
+    }
+
+    if (espnow_data.hit == false && esp_timer_get_time() - hit_micros > 100000)
+      gpio_set_level(GPIO_OUTPUT_LED, 1);
+
+    vTaskDelay(1);
+  }
+
 }

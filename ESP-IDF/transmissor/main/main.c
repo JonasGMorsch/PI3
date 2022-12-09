@@ -24,8 +24,7 @@
 #include "driver/adc.h"
 #include "hal/adc_hal.h"
 
-#include "freertos/queue.h"
-#include "gptimer.h"
+// #include "freertos/queue.h"
 #include "esp_log.h"
 ////////////// PIN DECLARATION //////////////
 #define GPIO_OUTPUT_LED GPIO_NUM_22
@@ -56,6 +55,7 @@ typedef struct struct_message
     float adc_mediam;
     bool hit;
     uint32_t player_side;
+    uint32_t adc_micros;
 } espnow_data_t;
 
 // Create a struct_message called myData
@@ -79,8 +79,10 @@ const char *TAG = "TRANSMITTER";
 volatile uint32_t return_tip_coupled_count;
 volatile uint32_t guard_touched_micros;
 
-volatile bool hit = false;
-volatile bool print = false;
+// volatile bool hit = false;
+// volatile bool print = false;
+
+volatile uint32_t adc_micros;
 
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -126,11 +128,24 @@ void IRAM_ATTR ADCTimer() // void *arg)
         return_tip_coupled_count = 0;
 
     //////////////// acd_value ////////////////
+
+    adc_micros = esp_timer_get_time();
+
     gpio_set_direction(GPIO_CAP_TIP, GPIO_MODE_INPUT);
     uint32_t adc_value = adc1_get_raw(ADC1_CHANNEL_4);
     // uint32_t adc_value = 0;
     gpio_set_direction(GPIO_CAP_TIP, GPIO_MODE_OUTPUT);
     gpio_set_level(GPIO_CAP_TIP, 1);
+
+    adc_micros = esp_timer_get_time() - adc_micros;
+
+    if (adc_micros > 45)
+    {
+        adc_value = 0;
+        adc_micros = 0;
+        return_tip_coupled_count--;
+        return;
+    }
 
     const register double lowpass_coefficient = 0.05;
     switch (return_tip_coupled_count)
@@ -153,35 +168,39 @@ void IRAM_ATTR ADCTimer() // void *arg)
             peak_hold_value = adc_value;
         break;
 
-    default:
-        if (peak_hold_value > adc_mediam)
-            guard_touched_micros = esp_timer_get_time();
-
-        if (esp_timer_get_time() - guard_touched_micros > 40000) // Valid touch must be holded for 40ms to be valid
-        {
+    case 10:
+        if (peak_hold_value < adc_mediam)
             espnow_data.hit = true;
-            hit = true;
-        }
+        break;
+
+    default:
+        // if (peak_hold_value > adc_mediam)
+        //     guard_touched_micros = esp_timer_get_time();
+        //
+        // if (esp_timer_get_time() - guard_touched_micros > 40000) // Valid touch must be holded for 40ms to be valid
+        // {
+        //     espnow_data.hit = true;
+        // }
 
         break;
     }
-    print = true;
+    // print = true;
 }
 
-void esp_now_task(void *pvParameters) // ESPNOW main task
-{
-    for (;;)
-    {
-        // ESP_LOGI(TAG, "return_tip_coupled_count: %d", return_tip_coupled_count);
-        espnow_data.adc_mediam = adc_mediam;
-        espnow_data.peak_hold_value = peak_hold_value;
-        espnow_data.player_side = 1;
-        esp_now_send(receiver_MAC, (uint8_t *)&espnow_data, sizeof(espnow_data));
+// void esp_now_task(void *pvParameters) // ESPNOW main task
+// {
+//     for (;;)
+//     {
+//         // ESP_LOGI(TAG, "return_tip_coupled_count: %d", return_tip_coupled_count);
+//         espnow_data.adc_mediam = adc_mediam;
+//         espnow_data.peak_hold_value = peak_hold_value;
+//         espnow_data.player_side = 1;
+//         esp_now_send(receiver_MAC, (uint8_t *)&espnow_data, sizeof(espnow_data));
 
-        vTaskDelay(1);
-    }
-    vTaskDelete(NULL);
-}
+//         vTaskDelay(1);
+//     }
+//     vTaskDelete(NULL);
+//}
 
 void app_main(void)
 {
@@ -202,81 +221,49 @@ void app_main(void)
     gpio_set_level(GPIO_CAP_TIP, 1);
     gpio_set_direction(GPIO_RETUN_TIP, GPIO_MODE_INPUT);
 
-    // const esp_timer_create_args_t periodic_timer_args = {
-    //     .callback = &ADCTimer,
-    //     .name = "ADCTimer", // name is optional, but may help identify the timer when debugging
-    //     .dispatch_method = ESP_TIMER_TASK,
-    //     .arg = NULL,
-    //     .skip_unhandled_events = true};
-    // esp_timer_handle_t periodic_timer;
-    // esp_timer_create(&periodic_timer_args, &periodic_timer);
-    // esp_timer_start_periodic(periodic_timer, 200); // Start the timers
-
-    gptimer_handle_t gptimer = NULL;
-    gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
-        .direction = GPTIMER_COUNT_UP,
-        .resolution_hz = 1 * 1000 * 1000, // 1MHz, 1 tick = 1us
-    };
-    ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
-
-    gptimer_alarm_config_t alarm_config = {
-        .reload_count = 0,                  // counter will reload with 0 on alarm event
-        .alarm_count = 1000000,             // period = 1s @resolution 1MHz
-        .flags.auto_reload_on_alarm = true, // enable auto-reload
-    };
-    ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
-
-    gptimer_event_callbacks_t cbs = {
-        .on_alarm = ADCTimer, // register user callback
-    };
-    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, queue));
-    ESP_ERROR_CHECK(gptimer_enable(gptimer));
-    ESP_ERROR_CHECK(gptimer_start(gptimer));
-
-    ESP_LOGI(TAG, "ENTEERING MAIN");
-
-    // espnow_send_param_t *send_param;
-    //  xTaskCreate(esp_now_task, "ESP now Task", 5000, (void *)send_param, 2, NULL);
-
-    // tskIDLE_PRIORITY
-    // configMAX_PRIORITIES
-    // configMAX_SYSCALL_INTERRUPT_PRIORITY
-    // configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY
-    // xTaskCreate(esp_now_task, "ESP now Task", 5000, NULL, tskIDLE_PRIORITY, NULL);
+    const esp_timer_create_args_t periodic_timer_args = {
+        .callback = &ADCTimer,
+        .name = "ADCTimer", // name is optional, but may help identify the timer when debugging
+        .dispatch_method = ESP_TIMER_TASK,
+        .arg = NULL,
+        .skip_unhandled_events = true};
+    esp_timer_handle_t periodic_timer;
+    esp_timer_create(&periodic_timer_args, &periodic_timer);
+    esp_timer_start_periodic(periodic_timer, 200); // Start the timers
 
     // MAIN
     for (;;)
     {
+
         static uint32_t hit_micros;
-        if (hit)
+        if (espnow_data.hit)
         {
-            gpio_set_level(GPIO_OUTPUT_LED, 0);
             hit_micros = esp_timer_get_time();
-            hit = false;
+            gpio_set_level(GPIO_OUTPUT_LED, 0);
+
+            espnow_data.adc_mediam = adc_mediam;
+            espnow_data.peak_hold_value = peak_hold_value;
+            espnow_data.player_side = return_tip_coupled_count;
+            espnow_data.adc_micros = adc_micros;
+
+            esp_now_send(receiver_MAC, (uint8_t *)&espnow_data, sizeof(espnow_data));
+
+            espnow_data.hit = false;
         }
 
-        if (hit == 0 && esp_timer_get_time() - hit_micros > 100000)
+        if (espnow_data.hit == false && esp_timer_get_time() - hit_micros > 100000)
         {
             gpio_set_level(GPIO_OUTPUT_LED, 1);
         }
 
-        static uint32_t test_timer_micros;
-        if (esp_timer_get_time() - test_timer_micros > 1000000)
-        {
-            test_timer_micros = esp_timer_get_time();
-            ESP_LOGI(TAG, "peak hold value: %d \t adc_mediam: %f", peak_hold_value, adc_mediam);
-            ESP_LOGI(TAG, "return_tip_coupled_count: %d", return_tip_coupled_count);
-        }
+        // static uint32_t test_timer_micros;
+        // if (esp_timer_get_time() - test_timer_micros > 1000000)
+        // {
+        // }
 
-        // if (espnow_data.hit)
-        //{
-        espnow_data.adc_mediam = adc_mediam;
-        espnow_data.peak_hold_value = peak_hold_value;
-        espnow_data.player_side = 1;
-        esp_now_send(receiver_MAC, (uint8_t *)&espnow_data, sizeof(espnow_data));
-        espnow_data.hit = false;
-        //}
+        // ESP_LOGI(TAG, "peak hold value: %.4d \t adc_mediam: %.2f \t adc_micros: %.3d", peak_hold_value, adc_mediam, adc_micros);
+        //  ESP_LOGI(TAG, "return_tip_coupled_count: %d", return_tip_coupled_count);
+        // ESP_LOGI(TAG, "adc_micros: %d", adc_micros);
 
         vTaskDelay(1); // 1 tick = 100Hz
     }
