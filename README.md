@@ -26,7 +26,7 @@ Construção padrão da espada:
 
 A espada elétrica possui 3 contatos:
 * Guard: É conectado ao terra, também está presente no cabo da espada, fazendo contado direto com o corpo do jogador
-* Tip e Return Tip: Eles conectam um push button que está na ponta da espada leitura, enviando e recebando um sinal
+* Tip e Return Tip: Eles conectam um push button que está na ponta da espada, enviando e recebando sinal
 
 ### Analisando o Sistema Comercial:
 
