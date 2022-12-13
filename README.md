@@ -9,7 +9,7 @@ O projeto consiste em implementar um produto já existente, porém de custo proi
 
 Este é uma placar de Esgrima, para a modalidade Épée, sua função é avaliar se o ataque da espada dos jogadores foi válido.
 
-O objvetivo é implemantar esta funcionalidade com o menor curto possível.
+O objvetivo é implemantar esta funcionalidade com o menor custo possível.
 
 ## Design:
 
