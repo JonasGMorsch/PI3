@@ -73,14 +73,18 @@ Estas medidas foram adiquiridas pelo miconcontrolador, já na bateria, com um re
 
 ![image](https://user-images.githubusercontent.com/17687969/207407322-c9c9fd02-e622-4755-a109-6d8c2b7c402b.png)
 
-Apesar de uma excelente diferença de valores, ela é majoritáriamenta causada pela capacitância do cabo, pois apenas dois cabos estão conectados até o momento que em que pushbutton é apertado, conectando o terceiro fio ao microcontrolador, causando o aumento de capacitância em cerca de 33% para um sinal não condutivo, o sinal real é apenas cerca de 20 pontos ( de 4096 ) entre o sinal condutivo e não condutivo.
+Apesar de uma excelente diferença de valores, ela é majoritáriamenta causada pela capacitância do cabo, pois apenas dois cabos estão conectados até o momento que em que pushbutton é apertado, conectando o terceiro fio ao microcontrolador, causando o aumento de capacitância mesmo para um sinal não condutivo, o sinal real é apenas cerca de 30 pontos ( de 4096 ) entre o sinal condutivo e não condutivo.
 
+Baseado nos valores medidos foi levantado o seguinte modelo:
 
+![image](https://user-images.githubusercontent.com/17687969/207423661-31de1535-7c75-4801-ba0e-e7f2a7e4a22e.png)
 
-
+Sendo C1, 435pF, a capacitância do cabo, e a capacitância da forma de alumínio está estimada em cerca de 20pF em paralelo com C1
 
 ### Mudando estratégia: 
 Formar um segundo filtro RC para cancelar os efeitos do terceiro fio sendo ligado em paralelo com o segundo fio, somando essas capacitâncias, para tal basta adicionar um segundo resistor que é acoplado quando o botão da ponta é pressionado.
+
+Eureka! Neste ambiente de testes foi possível notar que a geometria do cabo tem um fator crucial nos valores de capacitância dos fios 2 e 3, mais precisamente, que a relação de capacitância entre eles é sempre a mesma, considerando que ambos tem exatamente o memo comprimento, e, a mesma distância do cabo ligado ao terra, com isso é possível avaliar que a capacitância do fio 3 é sempre cerca de 33% do valor do cabo 2, sabendo disso, basta conectar um resistor de valor 3 vezes R1, neste caso, 300KΩ para de certa forma, cancelar os efeitos de capacitância do fio 3 sobre a medição.
 
 Teste feito com 100kΩ no segundo fio, como retorno de sinal do botão e 300kΩ no terceiro fio, utilizado como medida do filtro RC, o momento em que o ruído cessa é onde o botão foi apertado, em uma superfície não condutiva:
 
@@ -89,6 +93,10 @@ Teste feito com 100kΩ no segundo fio, como retorno de sinal do botão e 300k�
 Agora em superfície condutiva:
 
 ![image](https://user-images.githubusercontent.com/17687969/207409819-9821eae9-1985-470b-a928-d7fdee006ff6.png)
+
+O resultado final foi este modelo:
+
+![image](https://user-images.githubusercontent.com/17687969/207425338-b1c99e02-5410-409e-b896-acf2a04d06f1.png)
 
 
 
