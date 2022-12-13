@@ -1,7 +1,7 @@
-/*@file   ESPNOW_sender.c
-  @brief  implementation of ESPNOW protocol (sender end code)
-  @author bheesma-10
-*/
+// Jonas G. Morsch
+// Projeto Integrador 3
+// Sistema de detecção de metais por capacitância
+// sem fio para esgrima
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,24 +20,23 @@
 #include "esp_now.h"
 #include "esp_crc.h"
 #include "driver/gpio.h"
-
 #include "driver/adc.h"
 #include "hal/adc_hal.h"
-
-// #include "freertos/queue.h"
 #include "esp_log.h"
+
+#define PLAYER 1
+// #define PLAYER 2
+
 ////////////// PIN DECLARATION //////////////
 #define GPIO_OUTPUT_LED GPIO_NUM_22
 #define GPIO_CAP_TIP GPIO_NUM_32
 #define GPIO_RETUN_TIP GPIO_NUM_34
-////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////
 
 //////////////////////////// ESP-NOW SETTINGS ////////////////////////////
 #define ESPNOW_WIFI_MODE WIFI_MODE_STA
 #define ESPNOW_WIFI_IF ESP_IF_WIFI_STA
-// #define ESPNOW_QUEUE_SIZE 6
 
-/* Parameters of sending ESPNOW data. */
 typedef struct
 {
     bool unicast;                       // Send unicast ESPNOW data.
@@ -60,31 +59,25 @@ typedef struct struct_message
 
 // Create a struct_message called myData
 volatile espnow_data_t espnow_data;
-// espnow_data.player_side = 1;
 
+//////////////////////////// TRANSMISSOR SETTINGS ////////////////////////////
 /*receiver and sender ESP32 mac addresses(change these as per your device)*/
 // uint8_t receiver_MAC[] = {0x78, 0xe3, 0x6d, 0x19, 0x40, 0x61};
-uint8_t receiver_MAC[] = {0x78, 0xe3, 0x6d, 0x19, 0x52, 0x09};
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// uint8_t receiver_MAC[] = {0x78, 0xe3, 0x6d, 0x19, 0x52, 0x09};
+uint8_t receiver_MAC[] = {0x78, 0xe3, 0x6d, 0x1a, 0x89, 0x48};
+///////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////// ADC-SETTINGS ////////////////////////////
-// static esp_adc_cal_characteristics_t adc1_chars;
+//////////////////////////// ADC SETTINGS ////////////////////////////
 volatile double adc_mediam = 1000;
 volatile uint32_t peak_hold_value;
-
 /////////////////////////////////////////////////////////////////////
-
-const char *TAG = "TRANSMITTER";
 
 volatile uint32_t return_tip_coupled_count;
 volatile uint32_t guard_touched_micros;
-
-// volatile bool hit = false;
-// volatile bool print = false;
-
 volatile uint32_t adc_micros;
 
-portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+const char *TAG = "TRANSMITTER";
+// portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
 static void wifi_init(void)
 {
@@ -96,7 +89,7 @@ static void wifi_init(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(ESPNOW_WIFI_MODE));
     ESP_ERROR_CHECK(esp_wifi_start());
     // ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR));
-    // ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_LR)); //THIS BLOCKS WIFI DEVICES TO FIND IT
+    ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_LR)); // THIS BLOCKS WIFI DEVICES TO FIND IT
 }
 
 void espnow_init(void)
@@ -128,15 +121,11 @@ void IRAM_ATTR ADCTimer() // void *arg)
         return_tip_coupled_count = 0;
 
     //////////////// acd_value ////////////////
-
     adc_micros = esp_timer_get_time();
-
     gpio_set_direction(GPIO_CAP_TIP, GPIO_MODE_INPUT);
     uint32_t adc_value = adc1_get_raw(ADC1_CHANNEL_4);
-    // uint32_t adc_value = 0;
     gpio_set_direction(GPIO_CAP_TIP, GPIO_MODE_OUTPUT);
     gpio_set_level(GPIO_CAP_TIP, 1);
-
     adc_micros = esp_timer_get_time() - adc_micros;
 
     if (adc_micros > 45)
@@ -174,38 +163,13 @@ void IRAM_ATTR ADCTimer() // void *arg)
         break;
 
     default:
-        // if (peak_hold_value > adc_mediam)
-        //     guard_touched_micros = esp_timer_get_time();
-        //
-        // if (esp_timer_get_time() - guard_touched_micros > 40000) // Valid touch must be holded for 40ms to be valid
-        // {
-        //     espnow_data.hit = true;
-        // }
-
         break;
     }
-    // print = true;
 }
-
-// void esp_now_task(void *pvParameters) // ESPNOW main task
-// {
-//     for (;;)
-//     {
-//         // ESP_LOGI(TAG, "return_tip_coupled_count: %d", return_tip_coupled_count);
-//         espnow_data.adc_mediam = adc_mediam;
-//         espnow_data.peak_hold_value = peak_hold_value;
-//         espnow_data.player_side = 1;
-//         esp_now_send(receiver_MAC, (uint8_t *)&espnow_data, sizeof(espnow_data));
-
-//         vTaskDelay(1);
-//     }
-//     vTaskDelete(NULL);
-//}
 
 void app_main(void)
 {
     // SETUP
-
     nvs_flash_init();
     wifi_init();
     espnow_init();
@@ -231,10 +195,11 @@ void app_main(void)
     esp_timer_create(&periodic_timer_args, &periodic_timer);
     esp_timer_start_periodic(periodic_timer, 200); // Start the timers
 
-    // MAIN
-    for (;;)
-    {
+    espnow_data.player_side = PLAYER;
 
+    // MAIN
+    while (1)
+    {
         static uint32_t hit_micros;
         if (espnow_data.hit)
         {
@@ -256,13 +221,8 @@ void app_main(void)
             gpio_set_level(GPIO_OUTPUT_LED, 1);
         }
 
-        // static uint32_t test_timer_micros;
-        // if (esp_timer_get_time() - test_timer_micros > 1000000)
-        // {
-        // }
-
         // ESP_LOGI(TAG, "peak hold value: %.4d \t adc_mediam: %.2f \t adc_micros: %.3d", peak_hold_value, adc_mediam, adc_micros);
-        //  ESP_LOGI(TAG, "return_tip_coupled_count: %d", return_tip_coupled_count);
+        // ESP_LOGI(TAG, "return_tip_coupled_count: %d", return_tip_coupled_count);
         // ESP_LOGI(TAG, "adc_micros: %d", adc_micros);
 
         vTaskDelay(1); // 1 tick = 100Hz

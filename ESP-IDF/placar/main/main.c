@@ -1,7 +1,7 @@
-/*@file   ESPNOW_receiver.c
-  @brief  simple implementation of ESPNOW protocol (receiver end code)
-  @author bheesma-10
-*/
+// Jonas G. Morsch
+// Projeto Integrador 3
+// Sistema de detecção de metais por capacitância
+// sem fio para esgrima
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +28,9 @@
 //////////////////////////// ESP-NOW SETTINGS ////////////////////////////
 #define ESPNOW_WIFI_MODE WIFI_MODE_AP
 #define ESPNOW_WIFI_IF ESP_IF_WIFI_AP
+
+#define ESPNOW_WIFI_MODE WIFI_MODE_STA
+#define ESPNOW_WIFI_IF ESP_IF_WIFI_STA
 
 typedef struct
 {
@@ -62,7 +65,7 @@ static void wifi_init(void)
   ESP_ERROR_CHECK(esp_wifi_set_mode(ESPNOW_WIFI_MODE));
   ESP_ERROR_CHECK(esp_wifi_start());
   // ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR)); //THIS BLOCKS WIFI DEVICES TO FIND IT
-  // ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_LR)); //THIS BLOCKS WIFI DEVICES TO FIND IT
+  ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_LR)); // THIS BLOCKS WIFI DEVICES TO FIND IT
 }
 
 static void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len)
@@ -96,12 +99,12 @@ void app_main(void)
   wifi_init();
   espnow_init();
 
+  ////////////// PIN SETUP //////////////
   gpio_set_direction(GPIO_OUTPUT_LED, GPIO_MODE_OUTPUT); // Set the GPIO as a push/pull output
   gpio_set_level(GPIO_OUTPUT_LED, 1);
 
   // MAIN
-  for (;;)
-
+  while (1)
   {
 
     static uint32_t hit_micros;
@@ -115,7 +118,6 @@ void app_main(void)
     if (espnow_data.hit == false && esp_timer_get_time() - hit_micros > 100000)
       gpio_set_level(GPIO_OUTPUT_LED, 1);
 
-    vTaskDelay(1);
+    vTaskDelay(1); // 1 tick = 100Hz
   }
-
 }
