@@ -14,7 +14,7 @@ O objvetivo é implemantar esta funcionalidade com o menor custo possível.
 ## Design:
 
 O Desing externo terá como base o sistema comercial, já que vem sendo utilizado pelos esportistas que estão acostumados com seu método de funcionamento.
-Já o desing interno será construido ao redor do microcontrolador ESP32, que possui capacidade de transmissão sem fio á longa distância, ACD interno, e nessa versão LOLIN32 Lite, também possui capacidade de carregar e funcionar através de uma célula de lítio, que será a fonte de energia para os transmissores dos jogadores.
+Já o desing interno será construído ao redor do microcontrolador ESP32, que possui capacidade de transmissão sem fio à longa distância, ACD interno, e nessa versão LOLIN32 Lite, também possui capacidade de carregar e funcionar através de uma célula de lítio, que será a fonte de energia para os transmissores dos jogadores.
 
 ### Regras de funcionamento do equipamento oficial:
 
