@@ -76,7 +76,10 @@ Estas medidas foram adiquiridas pelo miconcontrolador, já na bateria, com um re
 Apesar de uma excelente diferença de valores, ela é majoritáriamenta causada pela capacitância do cabo, pois apenas dois cabos estão conectados até o momento que em que pushbutton é apertado, conectando o terceiro fio ao microcontrolador, causando o aumento de capacitância em cerca de 33% para um sinal não condutivo, o sinal real é apenas cerca de 20 pontos ( de 4096 ) entre o sinal condutivo e não condutivo.
 
 
-#### Mudando estratégia: 
+
+
+
+### Mudando estratégia: 
 Formar um segundo filtro RC para cancelar os efeitos do terceiro fio sendo ligado em paralelo com o segundo fio, somando essas capacitâncias, para tal basta adicionar um segundo resistor que é acoplado quando o botão da ponta é pressionado.
 
 Teste feito com 100kΩ no segundo fio, como retorno de sinal do botão e 300kΩ no terceiro fio, utilizado como medida do filtro RC, o momento em que o ruído cessa é onde o botão foi apertado, em uma superfície não condutiva:
@@ -90,10 +93,15 @@ Agora em superfície condutiva:
 
 
 
-##Referências:
-US20060100022A1 - Wireless scoring system for sport fencing - Google Patents
-US20010023218A1 - System of hit detection and signaling for fencing - Google Patents
-US3920242A - Electrical fencing scoring method and apparatus - Google Patents
+## Referências:
+
+https://patents.google.com/patent/US20060100022
+
+https://patents.google.com/patent/US20010023218A1
+
+https://patents.google.com/patent/US3920242A
+
+
 
 
 
