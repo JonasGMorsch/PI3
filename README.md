@@ -11,11 +11,14 @@ Este é uma placar de Esgrima, para a modalidade Épée, sua função é avaliar
 
 O objvetivo é implemantar esta funcionalidade com o menor curto possível.
 
+## Design:
+
+O Desing externo terá como base o sistema comercial, já que vem sendo utilizado pelos esportistas que estão acostumados com seu método de funcionamento.
+Já o desing interno será construido ao redor do microcontrolador ESP32, que possui capacidade de transmissão sem fio á longa distância, ACD interno, e nessa versão LOLIN32 Lite, também possui capacidade de carregar e funcionar através de uma célula de lítio, que será a fonte de energia para os transmissores dos jogadores.
+
 ### Regras de funcionamento do equipamento oficial:
 
   O sistema oficial, utilizado nas olimpíadas por exemplo, é ligado através de cabos conectados nas costas do jogadores e mantido tensionado por um sistema de polias, este é monitorado á uma velocidade de 500Hz, ou seja, o tempo máximo de detecção é de 2ms, o sistema também indetifica empates, quando os dois jogadores obtém um toque válido em um invertavo inferior á 40ms, acendendo os dois lados do placar
-
-## Desenvolvimento:
 
 Construção padrão da espada:
 
@@ -24,8 +27,6 @@ Construção padrão da espada:
 A espada elétrica possui 3 contatos:
 * Guard: É conectado ao terra, também está presente no cabo da espada, fazendo contado direto com o corpo do jogador
 * Tip e Return Tip: Eles conectam um push button que está na ponta da espada leitura, enviando e recebando um sinal
-
-
 
 ### Analisando o Sistema Comercial:
 
@@ -40,6 +41,8 @@ Esta é a parte analógica do sistema, notasse que ele possui um capacitor vari�
 ![image](https://user-images.githubusercontent.com/17687969/207403854-87014f6a-c9e2-45fd-b77c-828c1e6fdf6c.png)
 
   Em cinza é a forma de onda padrão, com a espada tocando em uma  não condutiva, e em amarelo é o sinal com menor capacitância possível que pode ser lido, no caso foi utilizado uma forma pequena de alumínio, o pico no momento t=0 é quando se obtém pressão suficiente para fechar o contato na ponta da espada, notasse que a tensão AC antes do toque é a mesma até poucos microssegundos antes do contado ser fechado, indicando que a partir daquele ponto a espada já estava em contato com a superfície metálica antes da detecção da chave, após o pico de tensão, a componente DC estabiliza para próximo de 0V, indicando a ponta pressionada, e a componente AC agora estabilizada, está cerca de 100mV menor que a referência em cinza, indicando que esta queda é o métrica de detecção que este sistema utiliza.
+
+## Implementação:
 
 ### Escolhendo pricípio de funcionamento:
 
@@ -84,22 +87,45 @@ Sendo C1, 435pF, a capacitância do cabo, e a capacitância da forma de alumíni
 ### Mudando estratégia: 
 Formar um segundo filtro RC para cancelar os efeitos do terceiro fio sendo ligado em paralelo com o segundo fio, somando essas capacitâncias, para tal basta adicionar um segundo resistor que é acoplado quando o botão da ponta é pressionado.
 
-Eureka! Neste ambiente de testes foi possível notar que a geometria do cabo tem um fator crucial nos valores de capacitância dos fios 2 e 3, mais precisamente, que a relação de capacitância entre eles é sempre a mesma, considerando que ambos tem exatamente o memo comprimento, e, a mesma distância do cabo ligado ao terra, com isso é possível avaliar que a capacitância do fio 3 é sempre cerca de 33% do valor do cabo 2, sabendo disso, basta conectar um resistor de valor 3 vezes R1, neste caso, 300KΩ para de certa forma, cancelar os efeitos de capacitância do fio 3 sobre a medição.
+Eureka! Neste ambiente de testes foi possível notar que a geometria do cabo tem um fator crucial nos valores de capacitância dos fios 2 e 3, mais precisamente, que a relação de capacitância entre eles é sempre a mesma, considerando que ambos tem exatamente o memo comprimento, e, a mesma distância do cabo ligado ao terra, é possível avaliar que a capacitância do fio 3 é sempre cerca de 33% do valor do fio 2, sabendo disso, basta conectar um resistor de valor 3 vezes R1, neste caso, 300KΩ para de certa forma, cancelar os efeitos de capacitância do fio 3 sobre a medição, retirando a nescessidade do usuário de calibrar o equipamento.
 
-Teste feito com 100kΩ no segundo fio, como retorno de sinal do botão e 300kΩ no terceiro fio, utilizado como medida do filtro RC, o momento em que o ruído cessa é onde o botão foi apertado, em uma superfície não condutiva:
+Teste feito com 100kΩ no segundo fio, como retorno de sinal do botão e 300kΩ no terceiro fio, utilizado como medida do filtro RC, o momento em que o ruído cessa é onde o botão foi apertado, em uma superfície não condutiva, e condutiva:
 
-![image](https://user-images.githubusercontent.com/17687969/207409785-2a742c3c-02c4-4e33-af1e-c27619fbe15f.png)
-
-Agora em superfície condutiva:
-
-![image](https://user-images.githubusercontent.com/17687969/207409819-9821eae9-1985-470b-a928-d7fdee006ff6.png)
+<img src="https://user-images.githubusercontent.com/17687969/207409785-2a742c3c-02c4-4e33-af1e-c27619fbe15f.png" width="49%"/> <img src="https://user-images.githubusercontent.com/17687969/207409819-9821eae9-1985-470b-a928-d7fdee006ff6.png" width="49%"/>
 
 O resultado final foi este modelo:
 
 ![image](https://user-images.githubusercontent.com/17687969/207425338-b1c99e02-5410-409e-b896-acf2a04d06f1.png)
 
+Este modelo foi utilizado para a implementação do sistema usilizando o ESP32 como base.
 
+Após a finalização do modelo e testes através do [ESPCORE](https://github.com/espressif/arduino-esp32) se iniciou a construção da parte física:
 
+### PCB:
+
+![image](https://user-images.githubusercontent.com/17687969/207434530-318e8a57-cfcb-449b-b0ed-035e6ffacba0.png)
+
+A placa foi feita utilizando o Laboratório de Protótipos. 
+
+![image](https://user-images.githubusercontent.com/17687969/207438199-08b3d47d-f612-48c7-a97d-778a7ff80a8e.png)
+
+### Caixa:
+
+A Caixa estipulada para o projeto não foi recebida por problemas de lojística, optou-se por uma outra caixa, de tamanho um pouco maior que seria possível adaptar todas as funções.
+
+![image](https://user-images.githubusercontent.com/17687969/207439109-53cc68eb-aa85-4924-98e2-b88f0ef01b29.png)
+
+### Montagem:
+
+Apesar dos pontos de motagem serem diferentes do planejado, o amplo espaço da placa permitiu fazer outros furos para fixação
+
+![image](https://user-images.githubusercontent.com/17687969/207439406-1d634d03-fa50-4ea0-9c6c-1b51dc7dbbd6.png)
+
+## Operação:
+
+A caixa ficou robusta, fácil de manusear, o afastamento da antena do corpo do esportista garantiu uma boa transmissão de sinal, o prendedor foi suficiente para não se soltar do corpo mesmo durante pulos.
+
+<img src="https://user-images.githubusercontent.com/17687969/207440813-c7bb5e40-e50d-4c19-b14e-71d3c78f75f2.png" width="40%"/> <img src="https://user-images.githubusercontent.com/17687969/207440845-13f5cf0a-d4ee-4214-9250-292aadbb4e9a.png" width="40%"/>
 
 ## Referências:
 
@@ -108,9 +134,3 @@ https://patents.google.com/patent/US20060100022
 https://patents.google.com/patent/US20010023218A1
 
 https://patents.google.com/patent/US3920242A
-
-
-
-
-
-
