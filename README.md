@@ -129,6 +129,10 @@ A caixa ficou robusta, fácil de manusear, o afastamento da antena do corpo do e
 
 <img src="https://user-images.githubusercontent.com/17687969/207440813-c7bb5e40-e50d-4c19-b14e-71d3c78f75f2.png" width="40%"/> <img src="https://user-images.githubusercontent.com/17687969/207440845-13f5cf0a-d4ee-4214-9250-292aadbb4e9a.png" width="40%"/>
 
+Medição da Linha RC em ação:
+
+<img src="https://user-images.githubusercontent.com/17687969/207599509-7af03e0b-db46-4e35-958d-6538f95ec1bd.png" width="40%"/> <img src="https://user-images.githubusercontent.com/17687969/207598078-ade5e755-1d6b-400d-9acf-0cb59786fa96.png" width="45%"/>
+
 ## Referências:
 
 https://patents.google.com/patent/US20060100022
