@@ -29,18 +29,8 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////// ESP-NOW SETTINGS ////////////////////////////
-// #define ESPNOW_WIFI_MODE WIFI_MODE_AP
-// #define ESPNOW_WIFI_IF ESP_IF_WIFI_AP
-
 #define ESPNOW_WIFI_MODE WIFI_MODE_STA
 #define ESPNOW_WIFI_IF ESP_IF_WIFI_STA
-
-typedef struct
-{
-  uint8_t mac_addr[ESP_NOW_ETH_ALEN];
-  const uint8_t *data;
-  int data_len;
-} espnow_event_recv_cb_t;
 
 typedef struct struct_message
 {
@@ -68,31 +58,18 @@ static void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len)
 
   memcpy(&espnow_data, data, len);
 
+  // Debug Data
   // ESP_LOGI(TAG, "peak hold value: %.4d   adc_mediam: %.2f", espnow_data.peak_hold_value, espnow_data.adc_mediam);
   // ESP_LOGI(TAG, "peak hold value: %.4d adc_mediam: %.2f adc_micros: %.3d return_tip_coupled_count: %.4d",
   //        espnow_data.peak_hold_value, espnow_data.adc_mediam, espnow_data.adc_micros, espnow_data.player_side);
-
   ESP_LOGI(TAG, "peak hold value: %.4d adc_mediam: %.2f adc_micros: %.3d",
            espnow_data.peak_hold_value, espnow_data.adc_mediam, espnow_data.adc_micros);
-
 }
 
 void app_main(void)
 {
   // SETUP
   nvs_flash_init();
-
-  ESP_ERROR_CHECK(esp_netif_init());
-  ESP_ERROR_CHECK(esp_event_loop_create_default());
-  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-  ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-  ESP_ERROR_CHECK(esp_wifi_set_mode(ESPNOW_WIFI_MODE));
-  ESP_ERROR_CHECK(esp_wifi_start());
-  ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_LR)); // THIS BLOCKS WIFI DEVICES TO FIND IT
-
-  ESP_ERROR_CHECK(esp_now_init());
-  ESP_ERROR_CHECK(esp_now_register_recv_cb(OnDataRecv));
 
   ////////////// PIN SETUP //////////////
   gpio_set_direction(GPIO_OUTPUT_LED, GPIO_MODE_OUTPUT); // Set the GPIO as a push/pull output
@@ -104,21 +81,22 @@ void app_main(void)
   gpio_set_direction(GPIO_OUTPUT_BUZZER, GPIO_MODE_OUTPUT); // Set the GPIO as a push/pull output
   gpio_set_level(GPIO_OUTPUT_LED, 1);
 
-  // MAIN
-  while (1)
+  ////////////// WIFI SETUP //////////////
+  ESP_ERROR_CHECK(esp_netif_init());
+  ESP_ERROR_CHECK(esp_event_loop_create_default());
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+  ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+  ESP_ERROR_CHECK(esp_wifi_set_mode(ESPNOW_WIFI_MODE));
+  ESP_ERROR_CHECK(esp_wifi_start());
+  ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_LR)); // THIS BLOCKS WIFI DEVICES TO FIND IT
+
+  ////////////// ESPNOW SETUP //////////////
+  ESP_ERROR_CHECK(esp_now_init());
+  ESP_ERROR_CHECK(esp_now_register_recv_cb(OnDataRecv));
+
+  while (1) // MAIN
   {
-
-    // static uint32_t hit_micros;
-    // if (espnow_data.hit)
-    // {
-    //   gpio_set_level(GPIO_OUTPUT_LED, 0);
-    //   hit_micros = esp_timer_get_time();
-    //   espnow_data.hit = false;
-    // }
-
-    // if (espnow_data.hit == false && esp_timer_get_time() - hit_micros > 100000)
-    //   gpio_set_level(GPIO_OUTPUT_LED, 1);
-
     static uint32_t hit_micros;
     static uint32_t player_1_hit_micros;
     static uint32_t player_2_hit_micros;
@@ -131,31 +109,30 @@ void app_main(void)
       {
         gpio_set_level(GPIO_OUTPUT_PLAYER_1, 0);
         player_1_hit_micros = esp_timer_get_time();
-        if (esp_timer_get_time() - player_2_hit_micros < 40000)
-        {
-          gpio_set_level(GPIO_OUTPUT_PLAYER_2, 0);
-        }
       }
       if (espnow_data.player_side == 2)
       {
         gpio_set_level(GPIO_OUTPUT_PLAYER_2, 0);
         player_2_hit_micros = esp_timer_get_time();
-        if (esp_timer_get_time() - player_1_hit_micros < 40000)
-        {
-          gpio_set_level(GPIO_OUTPUT_PLAYER_1, 0);
-        }
       }
+
+      if (abs(player_2_hit_micros - player_1_hit_micros) < 40000) // Draw decision
+      {
+        gpio_set_level(GPIO_OUTPUT_PLAYER_1, 0);
+        gpio_set_level(GPIO_OUTPUT_PLAYER_2, 0);
+      }
+
       hit_micros = esp_timer_get_time();
       espnow_data.hit = false;
     }
 
-    if (espnow_data.hit == false && esp_timer_get_time() - hit_micros > 1000000) // Lights Timer
+    if (espnow_data.hit == false && esp_timer_get_time() - hit_micros > 1000000) // Lights off Timer
     {
       gpio_set_level(GPIO_OUTPUT_PLAYER_1, 1);
       gpio_set_level(GPIO_OUTPUT_PLAYER_2, 1);
     }
 
-    if (espnow_data.hit == false && esp_timer_get_time() - hit_micros > 100000) // Buzzer Timer
+    if (espnow_data.hit == false && esp_timer_get_time() - hit_micros > 100000) // Buzzer off Timer
     {
       gpio_set_level(GPIO_OUTPUT_BUZZER, 1);
       gpio_set_level(GPIO_OUTPUT_LED, 1);

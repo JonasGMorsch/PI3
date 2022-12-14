@@ -24,14 +24,14 @@
 #include "hal/adc_hal.h"
 #include "esp_log.h"
 
+// Need to be selected for every transmitter 
 #define PLAYER 1
-//#define PLAYER 2
+// #define PLAYER 2
 
 ////////////// PIN DECLARATION //////////////
 #define GPIO_OUTPUT_LED GPIO_NUM_22
 #define GPIO_CAP_TIP GPIO_NUM_32
 #define GPIO_RETUN_TIP GPIO_NUM_34
-//////////////////////////////////////////////
 
 //////////////////////////// ESP-NOW SETTINGS ////////////////////////////
 #define ESPNOW_WIFI_MODE WIFI_MODE_STA
@@ -57,27 +57,16 @@ typedef struct struct_message
     volatile uint32_t adc_micros;
 } espnow_data_t;
 
-// Create a struct_message called myData
+// Create a struct_message
 volatile espnow_data_t espnow_data;
 
 //////////////////////////// TRANSMISSOR SETTINGS ////////////////////////////
-/*receiver and sender ESP32 mac addresses(change these as per your device)*/
-// uint8_t receiver_MAC[] = {0x78, 0xe3, 0x6d, 0x19, 0x40, 0x61};
-// uint8_t receiver_MAC[] = {0x78, 0xe3, 0x6d, 0x19, 0x52, 0x09};
+// receiver ESP32 mac addresses (change these as per your device)
 uint8_t receiver_MAC[] = {0x78, 0xe3, 0x6d, 0x1a, 0x89, 0x48};
 ///////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////// ADC SETTINGS ////////////////////////////
-// volatile double adc_mediam = 1000;
-// volatile uint32_t peak_hold_value;
-/////////////////////////////////////////////////////////////////////
-
 volatile uint32_t return_tip_coupled_count;
-volatile uint32_t guard_touched_micros;
-// volatile uint32_t adc_micros;
-
 const char *TAG = "TRANSMITTER";
-// portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
 void IRAM_ATTR ADCTimer() // void *arg)
 {
@@ -87,7 +76,7 @@ void IRAM_ATTR ADCTimer() // void *arg)
     else
         return_tip_coupled_count = 0;
 
-    //////////////// acd_value ////////////////
+    //////////////// ACD VALUE ////////////////
     espnow_data.adc_micros = esp_timer_get_time();
     gpio_set_direction(GPIO_CAP_TIP, GPIO_MODE_INPUT);
     uint32_t adc_value = adc1_get_raw(ADC1_CHANNEL_4);
@@ -103,11 +92,11 @@ void IRAM_ATTR ADCTimer() // void *arg)
         return;
     }
 
-    const register double lowpass_coefficient = 0.05;
+    const register double lowpass_coefficient = 0.05; // About 10 seconds to stabilize
     switch (return_tip_coupled_count)
     {
     case 0:
-        espnow_data.peak_hold_value = adc_value;
+        espnow_data.peak_hold_value = adc_value; // Debug Info
 
         if (adc_value > espnow_data.adc_mediam)
             espnow_data.adc_mediam += lowpass_coefficient;
@@ -116,7 +105,7 @@ void IRAM_ATTR ADCTimer() // void *arg)
         break;
 
     case 1 ... 2:
-        espnow_data.peak_hold_value = 0;
+        espnow_data.peak_hold_value = 0; // Discart the 3 initial measuriments, they are prone to static interference
         break;
 
     case 3 ... 9:
@@ -147,7 +136,6 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     ESP_ERROR_CHECK(esp_wifi_set_mode(ESPNOW_WIFI_MODE));
     ESP_ERROR_CHECK(esp_wifi_start());
-    // ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR));
     ESP_ERROR_CHECK(esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_LR)); // THIS BLOCKS WIFI DEVICES TO FIND IT
 
     ////////////// ESPNOW SETUP //////////////
@@ -161,8 +149,6 @@ void app_main(void)
     memcpy(peer->peer_addr, receiver_MAC, sizeof(receiver_MAC));
     ESP_ERROR_CHECK(esp_now_add_peer(peer));
     free(peer);
-
-    // ESP_LOGI(TAG, "mac address:%02X:%02X:%02X:%02X:%02X:%02X", receiver_MAC[0], receiver_MAC[1], receiver_MAC[2], receiver_MAC[3], receiver_MAC[4], receiver_MAC[5]);
 
     espnow_data.adc_mediam = 1000;
     espnow_data.player_side = PLAYER;
@@ -189,16 +175,11 @@ void app_main(void)
     esp_timer_create(&periodic_timer_args, &periodic_timer);
     esp_timer_start_periodic(periodic_timer, 200); // Start the timers
 
-    // MAIN
-    while (1)
+    while (1) // MAIN
     {
         static uint32_t hit_micros;
         if (espnow_data.hit)
         {
-            // espnow_data.adc_mediam = adc_mediam;
-            // espnow_data.peak_hold_value = peak_hold_value;
-            // espnow_data.adc_micros = adc_micros;
-
             esp_now_send(receiver_MAC, (uint8_t *)&espnow_data, sizeof(espnow_data));
 
             gpio_set_level(GPIO_OUTPUT_LED, 0);
@@ -212,7 +193,9 @@ void app_main(void)
             gpio_set_level(GPIO_OUTPUT_LED, 1);
         }
 
-        // ESP_LOGI(TAG, "peak hold value: %.4d \t adc_mediam: %.2f \t adc_micros: %.3d", espnow_data.peak_hold_value, espnow_data.adc_mediam, espnow_data.adc_micros);
+        // Debug Data
+        // ESP_LOGI(TAG, "peak hold value: %.4d \t adc_mediam: %.2f \t adc_micros: %.3d",
+        //          espnow_data.peak_hold_value, espnow_data.adc_mediam, espnow_data.adc_micros);
         //  ESP_LOGI(TAG, "return_tip_coupled_count: %d", return_tip_coupled_count);
         // ESP_LOGI(TAG, "adc_micros: %d", espnow_data.adc_micros);
 
