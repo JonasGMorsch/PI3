@@ -70,13 +70,15 @@ Medindo um capacitor de 2.2pF na protoboard:
 Provando que a leitura de baixas capacitâncias por este método é possível
 
 
-### Novas medidas (peak hold):
+### Novas medidas:
 
-Estas medidas foram adiquiridas pelo miconcontrolador, já na bateria, com um resistor de descarga de 100KΩ 
+Estas medidas foram adiquiridas pelo miconcontrolador, na bateria, com um resistor de descarga de 100KΩ, utilizando a espada, tocando na forma de alumínio:
 
 ![image](https://user-images.githubusercontent.com/17687969/207407322-c9c9fd02-e622-4755-a109-6d8c2b7c402b.png)
 
 Apesar de uma excelente diferença de valores, ela é majoritáriamenta causada pela capacitância do cabo, pois apenas dois cabos estão conectados até o momento que em que pushbutton é apertado, conectando o terceiro fio ao microcontrolador, causando o aumento de capacitância mesmo para um sinal não condutivo, o sinal real é apenas cerca de 30 pontos ( de 4096 ) entre o sinal condutivo e não condutivo.
+
+É importante comentar que o método de filtragem do sinal é diferente após o toque da espada, antes do toque, a linha em laranja é a leitura direta do ADC, e a vermelha a média dos útimos 500 valores, após o toque, a linha laranja apenas aceita valores maiores que o atual (hold peak),e a linha vermelha não é mais atualizada e passa a ser um valor constante, afim de não desviar a média durante o toque.
 
 Baseado nos valores medidos foi levantado o seguinte modelo:
 
